@@ -13,9 +13,8 @@
   },
 
   "dependencies": {
-    "Orleans": "",
-    "OrleansCodeGenerator": "",
-    "SharedContent": ""
+    "Orleans": { "target": "project" },
+    "OrleansCodeGenerator": { "target": "project" }
   },
 
   "commands": {
@@ -23,6 +22,6 @@
   },
 
   "frameworks": {
-    "dnx451": { }
+    "net451": { }
   }
 }

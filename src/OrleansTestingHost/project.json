@@ -7,13 +7,12 @@
   "licenseUrl": "",
 
   "dependencies": {
-    "Orleans": "",
-    "OrleansRuntime": "",
-    "SharedContent": "",
+    "Orleans": { "target": "project" },
+    "OrleansRuntime": { "target": "project" },
     "Newtonsoft.Json": "7.0.1"
   },
 
   "frameworks": {
-    "dnx451": { }
+    "net451": { }
   }
 }

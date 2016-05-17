@@ -11,8 +11,7 @@
   },
 
   "dependencies": {
-    "Orleans": "",
-    "SharedContent": ""
+    "Orleans": { "target": "project" }
   },
 
   "commands": {
@@ -20,6 +19,6 @@
   },
 
   "frameworks": {
-    "dnx451": { }
+    "net451": { }
   }
 }

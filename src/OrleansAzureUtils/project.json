@@ -7,16 +7,15 @@
   "licenseUrl": "",
 
   "dependencies": {
-    "Orleans": "",
-    "OrleansProviders": "",
-    "OrleansRuntime": "",
-    "SharedContent": "",
+    "Orleans": { "target": "project" },
+    "OrleansProviders": { "target": "project" },
+    "OrleansRuntime": { "target": "project" },
     "WindowsAzure.Storage": "5.0.2",
     "Newtonsoft.Json": "7.0.1"
   },
 
   "frameworks": {
-    "dnx451": {
+    "net451": {
       "frameworkAssemblies": {
         "System.Web": "4.0.0.0"
       }

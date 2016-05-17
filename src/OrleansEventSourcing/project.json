@@ -7,11 +7,10 @@
   "licenseUrl": "",
 
   "dependencies": {
-    "Orleans": "",
-    "SharedContent": ""
+    "Orleans": { "target": "project" }
   },
 
   "frameworks": {
-    "dnx451": { }
+    "net451": { }
   }
 }

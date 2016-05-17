@@ -7,13 +7,12 @@
   "licenseUrl": "",
 
   "dependencies": {
-    "Orleans": "",
-    "SharedContent": "",
+    "Orleans": { "target": "project" },
     "ZooKeeperNetEx": "3.4.8",
     "Newtonsoft.Json": "7.0.1"
   },
 
   "frameworks": {
-    "dnx451": { }
+    "net451": { }
   }
 }

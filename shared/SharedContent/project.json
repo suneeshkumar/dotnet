@@ -1,4 +1,4 @@
 ﻿{
   "shared": "*.cs",
-  "frameworks": { "dnx451": { } }
+  "frameworks": { "net451": { } }
 }

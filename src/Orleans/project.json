@@ -8,11 +8,14 @@
 
   "dependencies": {
     "Newtonsoft.Json": "7.0.1",
-    "SharedContent": ""
+    "SharedContent": {
+      "target": "project",
+      "type": "build"
+    }
   },
 
   "frameworks": {
-    "dnx451": {
+    "net451": {
       "frameworkAssemblies": {
         "System": "4.0.0.0",
         "System.Xml": "4.0.0.0",
