@@ -1,12 +1,10 @@
 ﻿{
   "version": "1.0.0-*",
-  "description": "OrleansEventSourcing Class Library",
+  "description": "TestInternalDtosRefOrleans Class Library",
   "authors": [ "Gutemberg" ],
-
   "dependencies": {
     "Orleans": { "target": "project" }
   },
-
   "frameworks": {
     "net451": { }
   }

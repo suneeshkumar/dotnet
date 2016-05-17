@@ -6,8 +6,8 @@
   </PropertyGroup>
   <Import Project="$(VSToolsPath)\DNX\Microsoft.DNX.Props" Condition="'$(VSToolsPath)' != ''" />
   <PropertyGroup Label="Globals">
-    <ProjectGuid>18f3768d-781e-43cf-a1bd-63657d19ba96</ProjectGuid>
-    <RootNamespace>OrleansCounterControl</RootNamespace>
+    <ProjectGuid>B99C744A-7F62-430C-9255-E64875D39486</ProjectGuid>
+    <RootNamespace>TestInternalDtosRefOrleans</RootNamespace>
     <BaseIntermediateOutputPath Condition="'$(BaseIntermediateOutputPath)'=='' ">..\..\artifacts\obj\$(MSBuildProjectName)</BaseIntermediateOutputPath>
     <OutputPath Condition="'$(OutputPath)'=='' ">.\bin\</OutputPath>
   </PropertyGroup>

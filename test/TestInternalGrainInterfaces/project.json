@@ -2,17 +2,14 @@
   "version": "1.0.0-*",
   "description": "TestInternalGrainInterfaces Class Library",
   "authors": [ "Gutemberg" ],
-  "tags": [ "" ],
-  "projectUrl": "",
-  "licenseUrl": "",
 
   "dependencies": {
-    "Orleans": "",
-    "TestGrainInterfaces": "",
+    "Orleans": { "target": "project" },
+    "TestGrainInterfaces": { "target": "project" },
     "FSharp.Core": "4.0.0.1"
   },
 
   "frameworks": {
-    "dnx451": { }    
+    "net451": { }    
   }
 }

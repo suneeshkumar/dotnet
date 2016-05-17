@@ -2,21 +2,14 @@
   "version": "1.0.0-*",
   "description": "OrleansHost Console Application",
   "authors": [ "Gutemberg" ],
-  "tags": [ "" ],
-  "projectUrl": "",
-  "licenseUrl": "",
 
-  "compilationOptions": {
+  "buildOptions": {
     "emitEntryPoint": true
   },
 
   "dependencies": {
     "Orleans": { "target": "project" },
     "OrleansRuntime": { "target": "project" }
-  },
-
-  "commands": {
-    "OrleansHost": "OrleansHost"
   },
 
   "frameworks": {

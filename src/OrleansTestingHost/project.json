@@ -2,12 +2,10 @@
   "version": "1.0.0-*",
   "description": "OrleansTestingHost Class Library",
   "authors": [ "Gutemberg" ],
-  "tags": [ "" ],
-  "projectUrl": "",
-  "licenseUrl": "",
 
   "dependencies": {
     "Orleans": { "target": "project" },
+    "OrleansProviders": { "target": "project" },
     "OrleansRuntime": { "target": "project" },
     "Newtonsoft.Json": "7.0.1"
   },

@@ -2,20 +2,14 @@
   "version": "1.0.0-*",
   "description": "OrleansManager Console Application",
   "authors": [ "Gutemberg" ],
-  "tags": [ "" ],
-  "projectUrl": "",
-  "licenseUrl": "",
 
-  "compilationOptions": {
+  "buildOptions": {
     "emitEntryPoint": true
   },
 
   "dependencies": {
-    "Orleans": { "target": "project" }
-  },
-
-  "commands": {
-    "OrleansManager": "OrleansManager"
+    "Orleans": { "target": "project" },
+    "OrleansRuntime": { "target": "project" }
   },
 
   "frameworks": {

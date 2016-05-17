@@ -2,14 +2,10 @@
   "version": "1.0.0-*",
   "description": "ClientGenerator Console Application",
   "authors": [ "Gutemberg" ],
-  "tags": [ "" ],
-  "projectUrl": "",
-  "licenseUrl": "",
 
-  "exclude": "Serialization/*.cs",
-
-  "compilationOptions": {
-    "emitEntryPoint": true
+  "buildOptions": {
+    "emitEntryPoint": true,
+    "compile": { "exclude": "Serialization/*.cs" }
   },
 
   "dependencies": {

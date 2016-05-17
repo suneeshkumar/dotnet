@@ -2,16 +2,9 @@
   "version": "1.0.0-*",
   "description": "OrleansProviders Class Library",
   "authors": [ "Gutemberg" ],
-  "tags": [ "" ],
-  "projectUrl": "",
-  "licenseUrl": "",
 
   "dependencies": {
-    "Orleans": { "target": "project" },
-    "SharedContent": {
-      "target": "project",
-      "type": "build"
-    }
+    "Orleans": { "target": "project" }
   },
 
   "frameworks": {

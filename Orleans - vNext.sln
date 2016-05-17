@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{F5F90656-F977-4198-8D86-1F996B35FD16}"
 EndProject
@@ -67,14 +67,16 @@ Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "TestInterfaces", "test\Test
 EndProject
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "TestInternalGrains", "test\TestInternalGrains\TestInternalGrains.xproj", "{482FEC6F-2F12-4208-A0FA-CD6B4BC056D9}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{AE0D2447-F55B-4E1C-910D-2FECC277BAB6}"
-	ProjectSection(SolutionItems) = preProject
-		global.json = global.json
-	EndProjectSection
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "shared", "shared", "{3A897B41-5038-4687-984B-9F68E4B5382E}"
 EndProject
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "SharedContent", "shared\SharedContent\SharedContent.xproj", "{AF799D2F-4A39-464A-8320-44E6B2531290}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "TestInternalDtosRefOrleans", "test\TestInternalDtosRefOrleans\TestInternalDtosRefOrleans.xproj", "{B99C744A-7F62-430C-9255-E64875D39486}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{3E5B566D-0458-4691-9605-4E201ACA6F38}"
+	ProjectSection(SolutionItems) = preProject
+		global.json = global.json
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -206,6 +208,10 @@ Global
 		{AF799D2F-4A39-464A-8320-44E6B2531290}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AF799D2F-4A39-464A-8320-44E6B2531290}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AF799D2F-4A39-464A-8320-44E6B2531290}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B99C744A-7F62-430C-9255-E64875D39486}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B99C744A-7F62-430C-9255-E64875D39486}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B99C744A-7F62-430C-9255-E64875D39486}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B99C744A-7F62-430C-9255-E64875D39486}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -242,5 +248,6 @@ Global
 		{925FB8E6-F968-4A8A-8141-14C58C8AA230} = {BBA86FE1-248D-4D12-80CA-78BBFC711B7C}
 		{482FEC6F-2F12-4208-A0FA-CD6B4BC056D9} = {BBA86FE1-248D-4D12-80CA-78BBFC711B7C}
 		{AF799D2F-4A39-464A-8320-44E6B2531290} = {3A897B41-5038-4687-984B-9F68E4B5382E}
+		{B99C744A-7F62-430C-9255-E64875D39486} = {BBA86FE1-248D-4D12-80CA-78BBFC711B7C}
 	EndGlobalSection
 EndGlobal

@@ -2,9 +2,6 @@
   "version": "1.0.0-*",
   "description": "OrleansGoogleUtils Class Library",
   "authors": [ "Gutemberg" ],
-  "tags": [ "" ],
-  "projectUrl": "",
-  "licenseUrl": "",
 
   "dependencies": {
     "Orleans": { "target": "project" },

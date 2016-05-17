@@ -2,19 +2,10 @@
   "version": "1.0.0-*",
   "description": "OrleansCodeGenerator Class Library",
   "authors": [ "Gutemberg" ],
-  "tags": [ "" ],
-  "projectUrl": "",
-  "licenseUrl": "",
 
   "dependencies": {
     "Orleans": { "target": "project" },
-    "SharedContent": {
-      "target": "project",
-      "type": "build"
-    },
-    "Microsoft.CodeAnalysis.CSharp": "1.0.0",
-    "System.Collections.Immutable": "1.1.36",
-    "System.Reflection.Metadata": "1.0.21"
+    "Microsoft.CodeAnalysis.CSharp" : "1.0.0"
   },
 
   "frameworks": {

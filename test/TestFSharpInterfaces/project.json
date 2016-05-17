@@ -2,9 +2,6 @@
   "version": "1.0.0-*",
   "description": "TestFSharpInterfaces Class Library",
   "authors": [ "Gutemberg" ],
-  "tags": [ "" ],
-  "projectUrl": "",
-  "licenseUrl": "",
 
   "dependencies": {
     "FSharp.Compiler.Tools": "4.0.0.1",
@@ -12,6 +9,6 @@
   },
 
   "frameworks": {
-    "dnx451": { }
+    "net451": { }
   }
 }

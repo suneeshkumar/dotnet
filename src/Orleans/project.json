@@ -2,16 +2,9 @@
   "version": "1.0.0-*",
   "description": "Orleans Class Library",
   "authors": [ "Gutemberg" ],
-  "tags": [ "" ],
-  "projectUrl": "",
-  "licenseUrl": "",
 
   "dependencies": {
-    "Newtonsoft.Json": "7.0.1",
-    "SharedContent": {
-      "target": "project",
-      "type": "build"
-    }
+    "Newtonsoft.Json": "7.0.1"
   },
 
   "frameworks": {
