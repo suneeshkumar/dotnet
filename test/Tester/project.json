@@ -6,7 +6,10 @@
   "testRunner": "xunit",
 
   "buildOptions": {
-    "compile": { "exclude": [ "DeploymentTests/**", "FSharpGrainTests.cs" ] }
+    "compile": { "exclude": [ "DeploymentTests/**", "FSharpGrainTests.cs" ] },
+    "copyToOutput": {
+      "include": "SerializationTests/ConfigurationTests/*.xml"
+    }
   },
 
   "dependencies": {

@@ -3,6 +3,11 @@
   "description": "TesterInternal Class Library",
   "authors": [ "Gutemberg" ],
   "testRunner": "xunit",
+  "buildOptions": {
+    "copyToOutput": {
+      "include": [ "Config_*.xml", "ClientConfig_*.xml", "*Configuration.xml" ]
+    }
+  },
 
   "dependencies": {
     "Orleans": { "target": "project" },
