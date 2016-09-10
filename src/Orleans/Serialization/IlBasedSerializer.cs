@@ -4,13 +4,11 @@ namespace Orleans.Serialization
     using System.Collections.Generic;
     using System.Linq;
     using System.Reflection;
-    using System.Reflection.Emit;
     using System.Runtime.Serialization;
 
     using Orleans.Runtime;
 
     using Sigil;
-    using Sigil.NonGeneric;
 
     internal class IlBasedSerializer
     {
@@ -25,11 +23,6 @@ namespace Orleans.Serialization
         private readonly MethodInfo getTypeFromHandleMethodInfo;
 
         /// <summary>
-        /// A reference to <see cref="SerializationManager.DeepCopyInner"/>
-        /// </summary>
-        private readonly MethodInfo deepCopyInnerMethodInfo;
-
-        /// <summary>
         /// A reference to the <see cref="SerializationContext.Current"/> getter method.
         /// </summary>
         private readonly MethodInfo getCurrentSerializationContext;
@@ -39,37 +32,157 @@ namespace Orleans.Serialization
         /// </summary>
         private readonly MethodInfo recordObjectMethodInfo;
 
-        public SerializationManager.SerializerMethods GenerateSerializer(TypeInfo type)
-        {
-            var fields = GetFields(type);
-            SerializationManager.DeepCopier deepCopyDelegate = GetDeepCopier(type, fields);
-            SerializationManager.Serializer serializeDelegate = null;
-            SerializationManager.Deserializer deserializeDelegate = null;
+        /// <summary>
+        /// A reference to <see cref="SerializationManager.DeepCopyInner"/>
+        /// </summary>
+        private readonly MethodInfo deepCopyInnerMethodInfo;
 
-            return new SerializationManager.SerializerMethods(deepCopyDelegate, serializeDelegate, deserializeDelegate);
+        /// <summary>
+        /// A reference to the <see cref="SerializationManager.SerializeInner(object, BinaryTokenStreamWriter, Type)"/> method.
+        /// </summary>
+        private readonly MethodInfo serializeInnerMethodInfo;
+
+        /// <summary>
+        /// A reference to the <see cref="SerializationManager.DeserializeInner(Type, BinaryTokenStreamReader)"/> method.
+        /// </summary>
+        private readonly MethodInfo deserializeInnerMethodInfo;
+
+        public IlBasedSerializer()
+        {
+#if NETSTANDARD
+            this.getUninitializedObjectMethodInfo = TypeUtils.Method(() => SerializationManager.GetUninitializedObjectWithFormatterServices(typeof(int)));
+#else
+            this.getUninitializedObjectMethodInfo = TypeUtils.Method(() => FormatterServices.GetUninitializedObject(typeof(int)));
+#endif
+            this.getTypeFromHandleMethodInfo = TypeUtils.Method(() => Type.GetTypeFromHandle(typeof(int).TypeHandle));
+
+            this.deepCopyInnerMethodInfo = TypeUtils.Method(() => SerializationManager.DeepCopyInner(typeof(int)));
+            this.serializeInnerMethodInfo =
+                TypeUtils.Method(() => SerializationManager.SerializeInner(default(object), default(BinaryTokenStreamWriter), default(Type)));
+            this.deserializeInnerMethodInfo = TypeUtils.Method(() => SerializationManager.DeserializeInner(default(Type), default(BinaryTokenStreamReader)));
+
+            this.getCurrentSerializationContext = TypeUtils.Property((object _) => SerializationContext.Current).GetMethod;
+            this.recordObjectMethodInfo = TypeUtils.Method((SerializationContext ctx) => ctx.RecordObject(default(object), default(object)));
         }
 
-        private SerializationManager.DeepCopier GetDeepCopier(TypeInfo type, List<FieldInfo> fields)
+        public SerializationManager.SerializerMethods GenerateSerializer(TypeInfo type)
         {
-            var typeInfo = type.GetTypeInfo();
+            var fields = this.GetFields(type);
+            var copier = this.EmitCopier(type, fields);
+            var serializer = this.EmitSerializer(type, fields);
+            var deserializer = this.EmitDeserializer(type, fields);
+            return new SerializationManager.SerializerMethods(copier, serializer, deserializer);
+        }
 
-            //var method = new DynamicMethod(type + "DeepCopier", typeof(object), new[] { typeof(object) }, type.GetTypeInfo().Module, true);
-            var emitter = Emit<SerializationManager.DeepCopier>.NewDynamicMethod(type, type.Name + "DeepCopier");//method.GetILGenerator();
-            
+        private SerializationManager.DeepCopier EmitCopier(TypeInfo type, List<FieldInfo> fields)
+        {
+            var emitter = Emit<SerializationManager.DeepCopier>.NewDynamicMethod(type, type.Name + "DeepCopier");
+
             // Declare local variables.
             var result = emitter.DeclareLocal(type);
             var typedInput = emitter.DeclareLocal(type);
 
             // Set the typed input variable from the method parameter.
             emitter.LoadArgument(0);
-            emitter.CastClass(type);
+            emitter.CastOrUnbox(type);
             emitter.StoreLocal(typedInput);
 
             // Construct the result.
-            var constructorInfo = type.GetConstructor(Type.EmptyTypes);
-            if (typeInfo.IsValueType)
+            this.CreateInstance(emitter, type, result);
+
+            // Record the object.
+            emitter.Call(this.getCurrentSerializationContext);
+            emitter.LoadArgument(0); // Load 'original' parameter.
+            emitter.LoadLocal(result); // Load 'result' local.
+            if (type.IsValueType) emitter.Box(type);
+            emitter.Call(this.recordObjectMethodInfo);
+
+            // Copy each field.
+            foreach (var field in fields)
             {
-                emitter.LoadLocal(result);
+                emitter.LoadLocalAsReference(type, result);
+                emitter.LoadLocal(typedInput);
+                emitter.LoadField(field);
+
+                // Deep-copy the field if needed, otherwise just leave it as-is.
+                if (!field.FieldType.IsOrleansShallowCopyable())
+                {
+                    if (field.FieldType.IsValueType) emitter.Box(field.FieldType);
+                    emitter.Call(this.deepCopyInnerMethodInfo);
+                    emitter.CastOrUnbox(field.FieldType);
+                }
+
+                emitter.StoreField(field);
+            }
+
+            emitter.LoadLocal(result);
+            if (type.IsValueType) emitter.Box(type);
+            emitter.Return();
+            return emitter.CreateDelegate();
+        }
+
+        private SerializationManager.Serializer EmitSerializer(TypeInfo type, List<FieldInfo> fields)
+        {
+            var emitter = Emit<SerializationManager.Serializer>.NewDynamicMethod(type, type.Name + "Serializer");
+
+            // Declare local variables.
+            var typedInput = emitter.DeclareLocal(type);
+
+            // Set the typed input variable from the method parameter.
+            emitter.LoadArgument(0);
+            emitter.CastOrUnbox(type);
+            emitter.StoreLocal(typedInput);
+
+            // Serialize each field
+            foreach (var field in fields)
+            {
+                emitter.LoadLocal(typedInput);
+                emitter.LoadField(field);
+                if (field.FieldType.IsValueType) emitter.Box(field.FieldType);
+                emitter.LoadArgument(1);
+                emitter.LoadConstant(field.FieldType);
+                emitter.Call(this.getTypeFromHandleMethodInfo);
+                emitter.Call(this.serializeInnerMethodInfo);
+            }
+
+            emitter.Return();
+            return emitter.CreateDelegate();
+        }
+
+        private SerializationManager.Deserializer EmitDeserializer(TypeInfo type, List<FieldInfo> fields)
+        {
+            var emitter = Emit<SerializationManager.Deserializer>.NewDynamicMethod(type, type.Name + "Deserializer");
+
+            // Declare local variables.
+            var result = emitter.DeclareLocal(type);
+
+            // Construct the result.
+            this.CreateInstance(emitter, type, result);
+
+            // Deserialize each field.
+            foreach (var field in fields)
+            {
+                emitter.LoadLocalAsReference(type, result);
+                emitter.LoadConstant(field.FieldType);
+                emitter.Call(this.getTypeFromHandleMethodInfo);
+                emitter.LoadArgument(1);
+                emitter.Call(this.deserializeInnerMethodInfo);
+                emitter.CastOrUnbox(field.FieldType);
+                emitter.StoreField(field);
+            }
+
+            emitter.LoadLocal(result);
+            if (type.IsValueType) emitter.Box(type);
+            emitter.Return();
+            return emitter.CreateDelegate();
+        }
+
+        private void CreateInstance<T>(Emit<T> emitter, TypeInfo type, Local result)
+        {
+            var constructorInfo = type.GetConstructor(Type.EmptyTypes);
+            if (type.IsValueType)
+            {
+                emitter.LoadLocalAddress(result);
                 emitter.InitializeObject(type);
             }
             else if (constructorInfo != null)
@@ -85,51 +198,6 @@ namespace Orleans.Serialization
                 emitter.CastClass(type);
                 emitter.StoreLocal(result);
             }
-
-            // Record the object.
-            emitter.Call(this.getCurrentSerializationContext);
-            emitter.LoadArgument(0); // Load 'original' parameter.
-            emitter.LoadLocal(result); // Load 'result' local.
-            emitter.Call(this.recordObjectMethodInfo);
-            
-            // Copy each field.
-            foreach (var field in fields)
-            {
-                if (field.FieldType.IsOrleansShallowCopyable())
-                {
-                    emitter.LoadLocal(result);
-                    emitter.LoadLocal(typedInput);
-                    emitter.LoadField(field);
-                    emitter.StoreField(field);
-                }
-                else
-                {
-                    emitter.LoadLocal(result);
-                    emitter.LoadLocal(typedInput);
-                    emitter.LoadField(field);
-                    emitter.Call(this.deepCopyInnerMethodInfo);
-                    emitter.CastClass(field.FieldType);
-                    emitter.StoreField(field);
-                }
-            }
-
-            emitter.LoadLocal(result);
-            emitter.Return();
-            return emitter.CreateDelegate();
-        }
-
-        public IlBasedSerializer()
-        {
-#if NETSTANDARD
-            this.getUninitializedObjectMethodInfo = TypeUtils.Method(() => SerializationManager.GetUninitializedObjectWithFormatterServices(typeof(int)));
-#else
-            this.getUninitializedObjectMethodInfo = TypeUtils.Method(() => FormatterServices.GetUninitializedObject(typeof(int)));
-#endif
-            this.getTypeFromHandleMethodInfo = TypeUtils.Method(() => Type.GetTypeFromHandle(typeof(int).TypeHandle));
-
-            this.deepCopyInnerMethodInfo = TypeUtils.Method(() => SerializationManager.DeepCopyInner(typeof(int)));
-            this.getCurrentSerializationContext = TypeUtils.Property((object _) => SerializationContext.Current).GetMethod;
-            this.recordObjectMethodInfo = TypeUtils.Method((SerializationContext ctx) => ctx.RecordObject(typeof(object), typeof(object)));
         }
 
         /// <summary>
@@ -139,10 +207,7 @@ namespace Orleans.Serialization
         /// <returns>A sorted list of the fields of the provided type.</returns>
         private List<FieldInfo> GetFields(TypeInfo type)
         {
-            var result =
-                type.GetAllFields()
-                    .Where(field => !field.IsNotSerialized)
-                    .ToList();
+            var result = type.GetAllFields().Where(field => !field.IsNotSerialized).ToList();
             result.Sort(FieldInfoComparer.Instance);
             return result;
         }
@@ -150,7 +215,7 @@ namespace Orleans.Serialization
         /// <summary>
         /// A comparer for <see cref="FieldInfo"/> which compares by name.
         /// </summary>
-        public class FieldInfoComparer : IComparer<FieldInfo>
+        private class FieldInfoComparer : IComparer<FieldInfo>
         {
             /// <summary>
             /// Gets the singleton instance of this class.
@@ -161,6 +226,27 @@ namespace Orleans.Serialization
             {
                 return string.Compare(x.Name, y.Name, StringComparison.Ordinal);
             }
+        }
+    }
+
+    internal static class EmitExtensions
+    {
+        public static void LoadLocalAsReference<T>(this Emit<T> emitter, TypeInfo type, Local result)
+        {
+            if (type.IsValueType)
+            {
+                emitter.LoadLocalAddress(result);
+            }
+            else
+            {
+                emitter.LoadLocal(result);
+            }
+        }
+
+        public static void CastOrUnbox<T>(this Emit<T> emitter, Type type)
+        {
+            if (type.IsValueType) emitter.UnboxAny(type);
+            else emitter.CastClass(type);
         }
     }
 }

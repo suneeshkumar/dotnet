@@ -1022,7 +1022,27 @@ namespace Orleans.Runtime
 
             throw new ArgumentException("Expression type unsupported.");
         }
-        
+
+        /// <summary>
+        /// Returns the <see cref="MethodInfo"/> for the simple method call in the provided <paramref name="expression"/>.
+        /// </summary>
+        /// <param name="expression">
+        /// The expression.
+        /// </param>
+        /// <returns>
+        /// The <see cref="MethodInfo"/> for the simple method call in the provided <paramref name="expression"/>.
+        /// </returns>
+        public static MethodInfo Method(Expression<Action> expression)
+        {
+            var methodCall = expression.Body as MethodCallExpression;
+            if (methodCall != null)
+            {
+                return methodCall.Method;
+            }
+
+            throw new ArgumentException("Expression type unsupported.");
+        }
+
         /// <summary>
         /// Returns the namespace of the provided type, or <see cref="string.Empty"/> if the type has no namespace.
         /// </summary>

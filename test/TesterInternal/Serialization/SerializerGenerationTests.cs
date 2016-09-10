@@ -30,9 +30,9 @@ namespace UnitTests.Serialization
             Assert.NotNull(SerializationManager.GetSerializer(typeof (MyTypeWithAnInternalTypeField)));
             Assert.NotNull(SerializationManager.GetSerializer(typeof(MyTypeWithAnInternalTypeField.MyInternalDependency)));
         }
-        
-        [Fact]
-        public void SerializationTests_ILBasedSerializer()
+
+        [Fact, TestCategory("Functional"), TestCategory("Serialization")]
+        public void SerializationTests_ILBasedSerializer_Class()
         {
             var generator = new IlBasedSerializer();
 
@@ -56,8 +56,7 @@ namespace UnitTests.Serialization
 #pragma warning restore 618
 
             var methods = generator.GenerateSerializer(input.GetType().GetTypeInfo());
-#warning INCLUDE WIRE OR METHDOSDA
-            var output = (SomeAbstractClass)this.SerializationLoop(input, methods, includeWire: false);
+            var output = (SomeAbstractClass)this.SerializationLoop(input, methods);
 
             Assert.Equal(input.Int, output.Int);
             Assert.Equal(input.String, ((OuterClass.SomeConcreteClass)output).String);
@@ -68,6 +67,25 @@ namespace UnitTests.Serialization
 #pragma warning disable 618
             Assert.Equal(input.ObsoleteInt, output.ObsoleteInt);
 #pragma warning restore 618
+        }
+
+        [Fact, TestCategory("Functional"), TestCategory("Serialization")]
+        public void SerializationTests_ILBasedSerializer_Struct()
+        {
+            var generator = new IlBasedSerializer();
+            
+            // Test struct serialization.
+            var expectedStruct = new SomeStruct(10) { Id = Guid.NewGuid(), PublicValue = 6, ValueWithPrivateGetter = 7 };
+            expectedStruct.SetValueWithPrivateSetter(8);
+            expectedStruct.SetPrivateValue(9);
+            var methods = generator.GenerateSerializer(expectedStruct.GetType().GetTypeInfo());
+            var actualStruct = (SomeStruct)this.SerializationLoop(expectedStruct, methods);
+            Assert.Equal(expectedStruct.Id, actualStruct.Id);
+            Assert.Equal(expectedStruct.ReadonlyField, actualStruct.ReadonlyField);
+            Assert.Equal(expectedStruct.PublicValue, actualStruct.PublicValue);
+            Assert.Equal(expectedStruct.ValueWithPrivateSetter, actualStruct.ValueWithPrivateSetter);
+            Assert.Equal(expectedStruct.GetPrivateValue(), actualStruct.GetPrivateValue());
+            Assert.Equal(expectedStruct.GetValueWithPrivateGetter(), actualStruct.GetValueWithPrivateGetter());
         }
 
         private object SerializationLoop(object input, SerializationManager.SerializerMethods methods, bool includeWire = true)
