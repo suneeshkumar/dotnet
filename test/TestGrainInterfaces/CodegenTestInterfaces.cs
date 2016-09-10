@@ -156,12 +156,22 @@ namespace UnitTests.GrainInterfaces
 
     public class OuterClass
     {
+        public static SomeConcreteClass GetPrivateClassInstance() => new PrivateConcreteClass();
+
+        public static Type GetPrivateClassType() => typeof(PrivateConcreteClass);
+
         [Serializable]
         public class SomeConcreteClass : SomeAbstractClass
         {
             public override int Int { get; set; }
 
             public string String { get; set; }
+        }
+
+        [Serializable]
+        private class PrivateConcreteClass : SomeConcreteClass
+        {
+            
         }
     }
 
