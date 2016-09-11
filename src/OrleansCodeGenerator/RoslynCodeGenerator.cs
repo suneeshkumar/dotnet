@@ -315,12 +315,6 @@ namespace Orleans.CodeGenerator
                 foreach (var attribute in assembly.GetCustomAttributes<ConsiderForCodeGenerationAttribute>())
                 {
                     ConsiderType(attribute.Type, runtime, targetAssembly, includedTypes, considerForSerialization: true);
-                    if (attribute.ThrowOnFailure && !SerializerGenerationManager.IsTypeRecorded(attribute.Type))
-                    {
-                        throw new CodeGenerationException(
-                            $"Found {attribute.GetType().Name} for type {attribute.Type.GetParseableName()}, but code"
-                            + " could not be generated. Ensure that the type is accessible.");
-                    }
                 }
 
                 KnownAssemblyAttribute knownAssemblyAttribute;

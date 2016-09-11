@@ -10,7 +10,9 @@ namespace Orleans.CodeGeneration
         protected ConsiderForCodeGenerationAttribute(Type type, bool throwOnFailure = false)
         {
             this.Type = type;
+#pragma warning disable 618
             this.ThrowOnFailure = throwOnFailure;
+#pragma warning restore 618
         }
 
         /// <summary>
@@ -21,6 +23,7 @@ namespace Orleans.CodeGeneration
         /// <summary>
         /// Gets a value indicating whether or not to throw if code was not generated for the specified type.
         /// </summary>
+        [Obsolete("This field is no longer needed and has no effect.")]
         public bool ThrowOnFailure { get; private set; }
     }
 

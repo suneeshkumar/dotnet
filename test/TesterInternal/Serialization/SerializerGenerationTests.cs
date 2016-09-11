@@ -34,13 +34,13 @@ namespace UnitTests.Serialization
         [Fact, TestCategory("Functional"), TestCategory("Serialization")]
         public void SerializationTests_ILBasedSerializer_Class()
         {
-            var generator = new IlBasedSerializer();
+            var generator = new IlBasedSerializerBuilder();
 
             var input = OuterClass.GetPrivateClassInstance();
             input.Int = 89;
             input.String = Guid.NewGuid().ToString();
             input.NonSerializedInt = 39;
-            input.Classes = new List<SomeAbstractClass>
+            input.Classes = new SomeAbstractClass[]
             {
                 input,
                 new AnotherConcreteClass
@@ -49,30 +49,26 @@ namespace UnitTests.Serialization
                     Interfaces = new List<ISomeInterface> { input }
                 }
             };
-
-            // Set fields which should not be serialized.
-#pragma warning disable 618
-            input.ObsoleteInt = 38;
-#pragma warning restore 618
+            input.Enum = SomeAbstractClass.SomeEnum.Something;
+            input.SetObsoleteInt(38);
 
             var methods = generator.GenerateSerializer(input.GetType().GetTypeInfo());
             var output = (SomeAbstractClass)this.SerializationLoop(input, methods);
 
             Assert.Equal(input.Int, output.Int);
+            Assert.Equal(input.Enum, output.Enum);
             Assert.Equal(input.String, ((OuterClass.SomeConcreteClass)output).String);
-            Assert.Equal(input.Classes.Count, output.Classes.Count);
+            Assert.Equal(input.Classes.Length, output.Classes.Length);
             Assert.Equal(input.String, ((OuterClass.SomeConcreteClass)output.Classes[0]).String);
             Assert.Equal(input.Classes[1].Interfaces[0].Int, output.Classes[1].Interfaces[0].Int);
             Assert.Equal(0, output.NonSerializedInt);
-#pragma warning disable 618
-            Assert.Equal(input.ObsoleteInt, output.ObsoleteInt);
-#pragma warning restore 618
+            Assert.Equal(input.GetObsoleteInt(), output.GetObsoleteInt());
         }
 
         [Fact, TestCategory("Functional"), TestCategory("Serialization")]
         public void SerializationTests_ILBasedSerializer_Struct()
         {
-            var generator = new IlBasedSerializer();
+            var generator = new IlBasedSerializerBuilder();
             
             // Test struct serialization.
             var expectedStruct = new SomeStruct(10) { Id = Guid.NewGuid(), PublicValue = 6, ValueWithPrivateGetter = 7 };

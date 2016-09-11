@@ -62,6 +62,8 @@ namespace Orleans.Serialization
 
         private static readonly string[] safeFailSerializers = { "Orleans.FSharp" };
 
+        private static readonly IlBasedSerializers serializerCache = new IlBasedSerializers();
+
         /// <summary>
         /// Toggles whether or not to use the .NET serializer (true) or the Orleans serializer (false).
         /// This is usually set through config.
@@ -904,15 +906,13 @@ namespace Orleans.Serialization
             lock (copiers)
             {
                 DeepCopier copier;
-                if (copiers.TryGetValue(t.TypeHandle, out copier))
-                    return copier;
+                if (copiers.TryGetValue(t.TypeHandle, out copier)) return copier;
 
                 var typeInfo = t.GetTypeInfo();
-                if (typeInfo.IsGenericType && copiers.TryGetValue(typeInfo.GetGenericTypeDefinition().TypeHandle, out copier))
-                    return copier;
+                if (typeInfo.IsGenericType && copiers.TryGetValue(typeInfo.GetGenericTypeDefinition().TypeHandle, out copier)) return copier;
             }
 
-            return null;
+            return serializerCache.Get(t).DeepCopy;
         }
 
         /// <summary>
@@ -975,19 +975,6 @@ namespace Orleans.Serialization
                 return copy;
             }
 
-            var copier = GetCopier(t);
-            if (copier != null)
-            {
-                copy = copier(original);
-                SerializationContext.Current.RecordObject(original, copy);
-                return copy;
-            }
-
-            return DeepCopierHelper(t, original);
-        }
-
-        private static object DeepCopierHelper(Type t, object original)
-        {
             // Arrays are all that's left. 
             // Handling arbitrary-rank arrays is a bit complex, but why not?
             var originalArray = original as Array;
@@ -998,6 +985,7 @@ namespace Orleans.Serialization
                     // A common special case - empty one dimentional array
                     return originalArray;
                 }
+
                 // A common special case
                 if ((original is byte[]) && (originalArray.Rank == 1))
                 {
@@ -1055,7 +1043,7 @@ namespace Orleans.Serialization
                     var sizes = new int[rank];
                     sizes[rank - 1] = 1;
                     for (var k = rank - 2; k >= 0; k--)
-                        sizes[k] = sizes[k + 1]*lengths[k + 1];
+                        sizes[k] = sizes[k + 1] * lengths[k + 1];
 
                     for (var i = 0; i < originalArray.Length; i++)
                     {
@@ -1069,14 +1057,22 @@ namespace Orleans.Serialization
                         copyArray.SetValue(DeepCopyInner(originalArray.GetValue(index)), index);
                     }
                 }
-                return copyArray;
 
+                return copyArray;
+            }
+
+            var copier = GetCopier(t);
+            if (copier != null)
+            {
+                copy = copier(original);
+                SerializationContext.Current.RecordObject(original, copy);
+                return copy;
             }
 
             if (t.GetTypeInfo().IsSerializable)
                 return FallbackSerializationDeepCopy(original);
 
-            throw new OrleansException("No copier found for object of type " + t.OrleansTypeName() + 
+            throw new OrleansException("No copier found for object of type " + t.OrleansTypeName() +
                 ". Perhaps you need to mark it [Serializable] or define a custom serializer for it?");
         }
 
@@ -1105,16 +1101,13 @@ namespace Orleans.Serialization
             lock (serializers)
             {
                 Serializer ser;
-                if (serializers.TryGetValue(t.TypeHandle, out ser))
-                    return ser;
+                if (serializers.TryGetValue(t.TypeHandle, out ser)) return ser;
 
                 var typeInfo = t.GetTypeInfo();
-                if (typeInfo.IsGenericType)
-                    if (serializers.TryGetValue(typeInfo.GetGenericTypeDefinition().TypeHandle, out ser))
-                        return ser;
+                if (typeInfo.IsGenericType && serializers.TryGetValue(typeInfo.GetGenericTypeDefinition().TypeHandle, out ser)) return ser;
             }
 
-            return null;
+            return serializerCache.Get(t).Serialize;
         }
 
         /// <summary>
@@ -1738,7 +1731,7 @@ namespace Orleans.Serialization
                 }
             }
 
-            return null;
+            return serializerCache.Get(t).Deserialize;
         }
 
         /// <summary>

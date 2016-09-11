@@ -10,7 +10,7 @@ namespace Orleans.Serialization
 
     using Sigil;
 
-    internal class IlBasedSerializer
+    internal class IlBasedSerializerBuilder
     {
         /// <summary>
         /// A reference to a method which returns an unformatted object.
@@ -30,7 +30,7 @@ namespace Orleans.Serialization
         /// <summary>
         /// A reference to the <see cref="SerializationContext.RecordObject(object, object)"/> method.
         /// </summary>
-        private readonly MethodInfo recordObjectMethodInfo;
+        private readonly MethodInfo recordObjectWhileCopyingMethodInfo;
 
         /// <summary>
         /// A reference to <see cref="SerializationManager.DeepCopyInner"/>
@@ -47,7 +47,11 @@ namespace Orleans.Serialization
         /// </summary>
         private readonly MethodInfo deserializeInnerMethodInfo;
 
-        public IlBasedSerializer()
+        private readonly MethodInfo recordObjectWhileDeserializingMethodInfo;
+
+        private readonly MethodInfo getCurrentDeserializationContext;
+
+        public IlBasedSerializerBuilder()
         {
 #if NETSTANDARD
             this.getUninitializedObjectMethodInfo = TypeUtils.Method(() => SerializationManager.GetUninitializedObjectWithFormatterServices(typeof(int)));
@@ -62,16 +66,26 @@ namespace Orleans.Serialization
             this.deserializeInnerMethodInfo = TypeUtils.Method(() => SerializationManager.DeserializeInner(default(Type), default(BinaryTokenStreamReader)));
 
             this.getCurrentSerializationContext = TypeUtils.Property((object _) => SerializationContext.Current).GetMethod;
-            this.recordObjectMethodInfo = TypeUtils.Method((SerializationContext ctx) => ctx.RecordObject(default(object), default(object)));
-        }
+            this.recordObjectWhileCopyingMethodInfo = TypeUtils.Method((SerializationContext ctx) => ctx.RecordObject(default(object), default(object)));
 
+            this.getCurrentDeserializationContext = TypeUtils.Property((object _) => DeserializationContext.Current).GetMethod;
+            this.recordObjectWhileDeserializingMethodInfo = TypeUtils.Method((DeserializationContext ctx) => ctx.RecordObject(default(object)));
+        }
+        
         public SerializationManager.SerializerMethods GenerateSerializer(TypeInfo type)
         {
-            var fields = this.GetFields(type);
-            var copier = this.EmitCopier(type, fields);
-            var serializer = this.EmitSerializer(type, fields);
-            var deserializer = this.EmitDeserializer(type, fields);
-            return new SerializationManager.SerializerMethods(copier, serializer, deserializer);
+            try
+            {
+                var fields = this.GetFields(type);
+                var copier = this.EmitCopier(type, fields);
+                var serializer = this.EmitSerializer(type, fields);
+                var deserializer = this.EmitDeserializer(type, fields);
+                return new SerializationManager.SerializerMethods(copier, serializer, deserializer);
+            }
+            catch (Exception exception)
+            {
+                throw new IlBasedSerializerException($"Serializer generation failed for type {type}", exception);
+            }
         }
 
         private SerializationManager.DeepCopier EmitCopier(TypeInfo type, List<FieldInfo> fields)
@@ -95,7 +109,7 @@ namespace Orleans.Serialization
             emitter.LoadArgument(0); // Load 'original' parameter.
             emitter.LoadLocal(result); // Load 'result' local.
             if (type.IsValueType) emitter.Box(type);
-            emitter.Call(this.recordObjectMethodInfo);
+            emitter.Call(this.recordObjectWhileCopyingMethodInfo);
 
             // Copy each field.
             foreach (var field in fields)
@@ -159,6 +173,12 @@ namespace Orleans.Serialization
             // Construct the result.
             this.CreateInstance(emitter, type, result);
 
+            // Record the object.
+            emitter.Call(this.getCurrentDeserializationContext);
+            emitter.LoadLocal(result);
+            if (type.IsValueType) emitter.Box(type);
+            emitter.Call(this.recordObjectWhileDeserializingMethodInfo);
+
             // Deserialize each field.
             foreach (var field in fields)
             {
@@ -194,6 +214,7 @@ namespace Orleans.Serialization
             else
             {
                 emitter.LoadConstant(type);
+                emitter.Call(this.getTypeFromHandleMethodInfo);
                 emitter.Call(this.getUninitializedObjectMethodInfo);
                 emitter.CastClass(type);
                 emitter.StoreLocal(result);
@@ -207,7 +228,7 @@ namespace Orleans.Serialization
         /// <returns>A sorted list of the fields of the provided type.</returns>
         private List<FieldInfo> GetFields(TypeInfo type)
         {
-            var result = type.GetAllFields().Where(field => !field.IsNotSerialized).ToList();
+            var result = type.GetAllFields().Where(field => !field.IsNotSerialized && !field.IsStatic && !field.FieldType.IsPointer).ToList();
             result.Sort(FieldInfoComparer.Instance);
             return result;
         }
@@ -225,6 +246,26 @@ namespace Orleans.Serialization
             public int Compare(FieldInfo x, FieldInfo y)
             {
                 return string.Compare(x.Name, y.Name, StringComparison.Ordinal);
+            }
+        }
+
+        [Serializable]
+        public class IlBasedSerializerException : OrleansException
+        {
+            public IlBasedSerializerException()
+            {
+            }
+
+            public IlBasedSerializerException(string message) : base(message)
+            {
+            }
+
+            public IlBasedSerializerException(string message, Exception innerException) : base(message, innerException)
+            {
+            }
+
+            protected IlBasedSerializerException(SerializationInfo info, StreamingContext context) : base(info, context)
+            {
             }
         }
     }

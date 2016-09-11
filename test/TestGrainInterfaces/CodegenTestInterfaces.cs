@@ -122,13 +122,24 @@ namespace UnitTests.GrainInterfaces
 
         public List<ISomeInterface> Interfaces { get; set; }
 
-        public List<SomeAbstractClass> Classes { get; set; }
+        public SomeAbstractClass[] Classes { get; set; }
 
         [Obsolete("This field should not be serialized", true)]
         public int ObsoleteIntWithError { get; set; }
 
         [Obsolete("This field should be serialized")]
         public int ObsoleteInt { get; set; }
+        
+
+        #pragma warning disable 618
+        public int GetObsoleteInt() => this.ObsoleteInt;
+        public void SetObsoleteInt(int value)
+        {
+            this.ObsoleteInt = value;
+        }
+        #pragma warning restore 618
+
+        public SomeEnum Enum { get; set; }
 
         public int NonSerializedInt
         {
@@ -156,7 +167,7 @@ namespace UnitTests.GrainInterfaces
 
     public class OuterClass
     {
-        public static SomeConcreteClass GetPrivateClassInstance() => new PrivateConcreteClass();
+        public static SomeConcreteClass GetPrivateClassInstance() => new PrivateConcreteClass(Guid.NewGuid());
 
         public static Type GetPrivateClassType() => typeof(PrivateConcreteClass);
 
@@ -166,12 +177,29 @@ namespace UnitTests.GrainInterfaces
             public override int Int { get; set; }
 
             public string String { get; set; }
+
+            private PrivateConcreteClass secretPrivateClass;
+
+            public void ConfigureSecretPrivateClass()
+            {
+                this.secretPrivateClass = new PrivateConcreteClass(Guid.NewGuid());
+            }
+
+            public bool AreSecretBitsIdentitcal(SomeConcreteClass other)
+            {
+                return other.secretPrivateClass?.Identity == this.secretPrivateClass?.Identity;
+            }
         }
 
         [Serializable]
         private class PrivateConcreteClass : SomeConcreteClass
         {
-            
+            public PrivateConcreteClass(Guid identity)
+            {
+                this.Identity = identity;
+            }
+
+            public readonly Guid Identity;
         }
     }
 
